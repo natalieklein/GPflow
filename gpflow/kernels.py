@@ -321,6 +321,26 @@ class RationalQuadratic(Stationary):
                                 (2 * self.alpha)) ** (- self.alpha)
 
 
+class Spectral(Stationary):
+    """
+    Component of Spectral Mixture kernel,
+    k(r) = w*exp(-0.5*r^2*v)*cos(mu*r),
+    w: weight/variance
+    v: lengthscale
+    mu: mean spectral location
+    """
+    def __init__(self):
+        super().__init__(input_dim=1,active_dims=[0])
+        self.mu = gpflow.Param(1.0,transform=gpflow.transforms.positive)
+
+    @params_as_tensors
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
+        d2 = self.scaled_square_dist(X,X2)
+        return self.variance*tf.multiply(tf.exp(-self.lengthscales*d2/2),tf.cos(self.mu*tf.sqrt(d2+1e-12)))
+
+
 class Linear(Kernel):
     """
     The linear kernel
